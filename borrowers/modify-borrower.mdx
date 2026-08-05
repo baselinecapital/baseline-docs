@@ -4,7 +4,6 @@ description: "Update an existing borrower's information"
 api: "PATCH /borrower/{id}"
 ---
 
-
 ## Path Parameters
 
 <ParamField path="id" type="string">
@@ -61,6 +60,10 @@ api: "PATCH /borrower/{id}"
   Country
 </ParamField>
 
+<ParamField body="Address_Type" default="primary" type="enum">
+  Address designation to update: `primary` or `mailing`. Defaults to `primary` when omitted. Updating one designation never affects the other. `secondary` is not accepted.
+</ParamField>
+
 ## Example Response
 
 ```json
@@ -75,7 +78,8 @@ api: "PATCH /borrower/{id}"
     "Address_Street1": "123 Main St.",
     "Address_City": "New York",
     "Address_State": "NY",
-    "Address_Country": "US"
+    "Address_Country": "US",
+    "Address_Type": "primary"
   }
 }
 ```

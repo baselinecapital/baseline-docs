@@ -4,7 +4,6 @@ description: "Create a new investor in Baseline"
 api: "POST /investor"
 ---
 
-
 ## Request Body
 
 <ParamField body="Name" type="string">
@@ -63,6 +62,10 @@ api: "POST /investor"
   Country
 </ParamField>
 
+<ParamField body="Address_Type" default="primary" type="enum">
+  Address designation: `primary` or `mailing`. Defaults to `primary` when omitted. `secondary` is not accepted.
+</ParamField>
+
 ## Example Response
 
 ```json
@@ -75,7 +78,8 @@ api: "POST /investor"
     "Address_Street1": "123 Main St.",
     "Address_City": "New York",
     "Address_State": "NY",
-    "Address_Country": "US"
+    "Address_Country": "US",
+    "Address_Type": "primary"
   }
 }
 ```

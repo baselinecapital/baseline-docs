@@ -4,7 +4,6 @@ description: "Update an existing investor's information"
 api: "PATCH /investor/{id}"
 ---
 
-
 ## Path Parameters
 
 <ParamField path="id" type="string">
@@ -59,6 +58,10 @@ api: "PATCH /investor/{id}"
 
 <ParamField body="Address_Country" type="string">
   Country
+</ParamField>
+
+<ParamField body="Address_Type" default="primary" type="enum">
+  Address designation to update: `primary` or `mailing`. Defaults to `primary` when omitted. Updating one designation never affects the other. `secondary` is not accepted.
 </ParamField>
 
 ## Example Response
