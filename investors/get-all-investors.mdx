@@ -4,7 +4,6 @@ description: "Retrieve a paginated list of all investors"
 api: "GET /investor"
 ---
 
-
 ## Query Parameters
 
 <ParamField query="page" type="object">
@@ -19,7 +18,12 @@ api: "GET /investor"
     "Id": "1234",
     "Name": "John Smith",
     "Email": "john.smith@mailsac.com",
-    "Is_Company": false
+    "Is_Company": false,
+    "Address_Street1": "123 Main St.",
+    "Address_City": "New York",
+    "Address_State": "NY",
+    "Address_Country": "US",
+    "Address_Type": "primary"
   }],
   "pagination": { "total": 1, "page_size": 10, "page": 0 }
 }

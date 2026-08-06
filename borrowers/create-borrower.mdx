@@ -63,7 +63,7 @@ api: "POST /borrower"
 </ParamField>
 
 <ParamField body="Address_Type" default="primary" type="enum">
-  Address designation: `primary` or `mailing`. Defaults to `primary` when omitted. `secondary` is not accepted.
+  Address designation: `primary` or `mailing`. Defaults to `primary` when omitted. `secondary` is not accepted. Read responses return a single address block — the `primary` address when a contact has both a primary and a mailing.
 </ParamField>
 
 ## Example Response

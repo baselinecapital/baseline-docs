@@ -4,7 +4,6 @@ description: "Retrieve a single vendor by ID"
 api: "GET /vendor/{id}"
 ---
 
-
 ## Path Parameters
 
 <ParamField path="id" type="string">
@@ -18,7 +17,12 @@ api: "GET /vendor/{id}"
   "vendor": {
     "Id": "1234",
     "Name": "John Smith",
-    "Email": "john.smith@mailsac.com"
+    "Email": "john.smith@mailsac.com",
+    "Address_Street1": "123 Main St.",
+    "Address_City": "New York",
+    "Address_State": "NY",
+    "Address_Country": "US",
+    "Address_Type": "primary"
   }
 }
 ```

@@ -63,7 +63,7 @@ api: "POST /vendor"
 </ParamField>
 
 <ParamField body="Address_Type" default="primary" type="enum">
-  Address designation: `primary` or `mailing`. Defaults to `primary` when omitted. `secondary` is not accepted.
+  Address designation: `primary` or `mailing`. Defaults to `primary` when omitted. `secondary` is not accepted. Read responses return a single address block — the `primary` address when a contact has both a primary and a mailing.
 </ParamField>
 
 ## Example Response
@@ -74,7 +74,12 @@ api: "POST /vendor"
     "Id": "1234",
     "Name": "John Smith",
     "Email": "john.smith@mailsac.com",
-    "Is_Company": false
+    "Is_Company": false,
+    "Address_Street1": "123 Main St.",
+    "Address_City": "New York",
+    "Address_State": "NY",
+    "Address_Country": "US",
+    "Address_Type": "primary"
   }
 }
 ```

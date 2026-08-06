@@ -61,7 +61,7 @@ api: "PATCH /borrower/{id}"
 </ParamField>
 
 <ParamField body="Address_Type" default="primary" type="enum">
-  Address designation to update: `primary` or `mailing`. Defaults to `primary` when omitted. Updating one designation never affects the other. `secondary` is not accepted.
+  Address designation to update: `primary` or `mailing`. Defaults to `primary` when omitted. Updating one designation never affects the other. `secondary` is not accepted. Responses return the `primary` address block, so a `mailing` update is saved but not echoed back.
 </ParamField>
 
 ## Example Response
