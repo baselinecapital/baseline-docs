@@ -33,9 +33,17 @@ curl -X GET https://production.baselinesoftware.com/production/api/loan \
 
 OAuth lets an application, such as Postman, call the API as a Baseline user after the user signs in and approves access. Requests run with that user's permissions.
 
+<Note>
+  Scopes aren't supported yet. An approved application gets the user's full access.
+</Note>
+
 ### Tenant host
 
 Use your organization's Baseline host, such as `yourcompany.baselinesoftware.com` or your custom domain, for every OAuth and API request. Tokens are issued for that host, and the discovery documents point to it. In the examples below, replace `<tenant-host>` with your host and `production` with your environment's stage.
+
+<Warning>
+  Don't use the shared `production.baselinesoftware.com` host for OAuth. Its `401` challenge is a plain `Bearer` with no `realm` or `resource_metadata`, and registering a client there fails.
+</Warning>
 
 ### Discovery
 
@@ -106,6 +114,8 @@ The response is `201` with your `client_id`.
      -d resource=https://<tenant-host>/production
    ```
 
+Confidential clients (registered with `client_secret_post` or `client_secret_basic`) also send their `client_secret` on the token exchange: as a `client_secret` parameter for `client_secret_post`, or with HTTP Basic authentication of `client_id:client_secret` for `client_secret_basic`.
+
 The response contains an `access_token`, a `refresh_token`, `token_type: "Bearer"` and `expires_in` in seconds.
 
 ### Calling the API
@@ -128,7 +138,7 @@ curl -X POST https://<tenant-host>/production/oauth/token \
   -d refresh_token=<refresh_token>
 ```
 
-Each refresh returns a new `refresh_token` and invalidates the previous one, so store the new one. An `invalid_grant` error means the user must authorize again.
+Confidential clients send their `client_secret` here too. Each refresh returns a new `refresh_token` and invalidates the previous one, so store the new one. An `invalid_grant` error means the user must authorize again.
 
 ## Error Responses
 
@@ -138,6 +148,10 @@ If no credential is sent, or the API key or access token is invalid, expired or 
 401 Not authorized
 WWW-Authenticate: Bearer realm="<tenant-host>", error="invalid_token", resource_metadata="https://<tenant-host>/.well-known/oauth-protected-resource"
 ```
+
+<Note>
+  Missing or invalid credentials used to return `403`. They now return `401`.
+</Note>
 
 If your credential is valid but does not allow the request, you will receive a `403` response without a challenge:
 
