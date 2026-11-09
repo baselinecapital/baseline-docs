@@ -3,15 +3,19 @@ title: "Authentication"
 description: "How to authenticate with the Baseline API"
 ---
 
-All API requests must include an API key in the `Authorization` header.
+You can authenticate with an API key or with OAuth 2.1 on behalf of a Baseline user.
 
-## Header Format
+## API keys
+
+All API key requests must include the key in the `Authorization` header.
+
+### Header Format
 
 ```text
 Authorization: Token <your-api-key>
 ```
 
-## Example Request
+### Example Request
 
 ```bash
 curl -X GET https://production.baselinesoftware.com/production/api/loan \
@@ -25,9 +29,131 @@ curl -X GET https://production.baselinesoftware.com/production/api/loan \
 | Production | `https://production.baselinesoftware.com/production/api` |
 | Staging | `https://staging.baselinesoftware.com/staging/api` |
 
+## OAuth 2.1 (user-delegated)
+
+OAuth lets an application, such as Postman, call the API as a Baseline user after the user signs in and approves access. Requests run with that user's permissions.
+
+<Note>
+  Scopes aren't supported yet. An approved application gets the user's full access.
+</Note>
+
+### Tenant host
+
+Use your organization's Baseline host, such as `yourcompany.baselinesoftware.com` or your custom domain, for every OAuth and API request. Tokens are issued for that host, and the discovery documents point to it. In the examples below, replace `<tenant-host>` with your host and `production` with your environment's stage.
+
+<Warning>
+  Don't use the shared `production.baselinesoftware.com` host for OAuth. Its `401` challenge is a plain `Bearer` with no `realm` or `resource_metadata`, and registering a client there fails.
+</Warning>
+
+### Discovery
+
+Send an API request without credentials. The API answers `401` with a challenge that links to the protected resource metadata:
+
+```text
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: Bearer realm="<tenant-host>", resource_metadata="https://<tenant-host>/.well-known/oauth-protected-resource"
+```
+
+The protected resource metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) names the API resource and its authorization server:
+
+```json
+{
+  "resource": "https://<tenant-host>/production",
+  "authorization_servers": ["https://<tenant-host>/production"],
+  "bearer_methods_supported": ["header"]
+}
+```
+
+Fetch the authorization server metadata ([RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414)) from `https://<tenant-host>/.well-known/oauth-authorization-server/production`. It lists the `authorization_endpoint`, `token_endpoint`, `registration_endpoint` and `revocation_endpoint`. Use the endpoints it returns rather than building them yourself.
+
+### Dynamic client registration
+
+Register your application by sending a `POST` to the `registration_endpoint`, including its `tenant` query parameter:
+
+```bash
+curl -X POST "https://<tenant-host>/production/oauth/register?tenant=<tenant-host>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "Postman",
+    "redirect_uris": ["https://oauth.pstmn.io/v1/callback"],
+    "token_endpoint_auth_method": "none"
+  }'
+```
+
+- `redirect_uris` must use `https`, or a loopback address for native apps. You can register up to 10.
+- `token_endpoint_auth_method` is `none` for public clients. Use `client_secret_post` or `client_secret_basic` to receive a `client_secret`.
+
+The response is `201` with your `client_id`.
+
+### Authorization code with PKCE
+
+1. Generate a random `code_verifier` and its S256 `code_challenge`.
+2. Send the user to the `authorization_endpoint`:
+
+   ```text
+   https://<tenant-host>/production/oauth/authorize
+     ?response_type=code
+     &client_id=<client_id>
+     &redirect_uri=https://oauth.pstmn.io/v1/callback
+     &code_challenge=<code_challenge>
+     &code_challenge_method=S256
+     &state=<state>
+     &resource=https://<tenant-host>/production
+   ```
+
+3. The user signs in to Baseline and approves access. Baseline redirects to your `redirect_uri` with `code` and `state`. The code expires after 10 minutes.
+4. Exchange the code at the `token_endpoint`:
+
+   ```bash
+   curl -X POST https://<tenant-host>/production/oauth/token \
+     -d grant_type=authorization_code \
+     -d client_id=<client_id> \
+     -d code=<code> \
+     -d code_verifier=<code_verifier> \
+     -d redirect_uri=https://oauth.pstmn.io/v1/callback \
+     -d resource=https://<tenant-host>/production
+   ```
+
+Confidential clients (registered with `client_secret_post` or `client_secret_basic`) also send their `client_secret` on the token exchange: as a `client_secret` parameter for `client_secret_post`, or with HTTP Basic authentication of `client_id:client_secret` for `client_secret_basic`.
+
+The response contains an `access_token`, a `refresh_token`, `token_type: "Bearer"` and `expires_in` in seconds.
+
+### Calling the API
+
+Send the access token as a bearer token:
+
+```bash
+curl -X GET https://<tenant-host>/production/api/loan \
+  -H "Authorization: Bearer <access_token>"
+```
+
+### Refreshing tokens
+
+When the access token expires, request a new one with the refresh token:
+
+```bash
+curl -X POST https://<tenant-host>/production/oauth/token \
+  -d grant_type=refresh_token \
+  -d client_id=<client_id> \
+  -d refresh_token=<refresh_token>
+```
+
+Confidential clients send their `client_secret` here too. Each refresh returns a new `refresh_token` and invalidates the previous one, so store the new one. An `invalid_grant` error means the user must authorize again.
+
 ## Error Responses
 
-If your API key is missing, invalid, or inactive, you will receive a `403` response:
+If no credential is sent, or the API key or access token is invalid, expired or revoked, you will receive a `401` response with a `WWW-Authenticate` challenge. A rejected credential adds `error="invalid_token"`:
+
+```text
+401 Not authorized
+WWW-Authenticate: Bearer realm="<tenant-host>", error="invalid_token", resource_metadata="https://<tenant-host>/.well-known/oauth-protected-resource"
+```
+
+<Note>
+  Missing or invalid credentials used to return `403`. They now return `401`.
+</Note>
+
+If your credential is valid but does not allow the request, you will receive a `403` response without a challenge:
 
 ```text
 403 Not authorized
